@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import "./index.css";
 
-const initialData = [
-  { id: 1, title: 'Today', cards: ['Coding', 'Google Research'] }
-];
+// --- SUPABASE CONFIG ---
+// Inhe apne Supabase Project Settings -> API se replace karein
+const supabaseUrl = 'YOUR_SUPABASE_URL';
+const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 function App() {
-  const [data, setData] = useState(initialData);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   // Inline States
   const [addingCardToList, setAddingCardToList] = useState(null); 
@@ -15,76 +19,99 @@ function App() {
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
 
-  // --- Functions ---
+  // --- DATABASE OPERATIONS ---
 
-  // Ab ye function direct delete karega bina kisi alert ke
-  const handleDeleteList = (listId) => {
-    setData(data.filter(list => list.id !== listId));
+  // 1. Fetch Data (Read)
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { data: todos, error } = await supabase
+      .from('todos')
+      .select('*')
+      .order('id', { ascending: true });
+    
+    if (error) console.error("Error fetching:", error);
+    else setData(todos || []);
+    setLoading(false);
   };
 
-  const handleAddCard = (listId) => {
+  // 2. Add New List (Create)
+  const handleAddList = async () => {
+    if (!newListTitle.trim()) return;
+    const { error } = await supabase
+      .from('todos')
+      .insert([{ title: newListTitle, cards: [] }]);
+    
+    if (!error) {
+      setNewListTitle("");
+      setIsAddingList(false);
+      fetchData(); // Refresh data
+    }
+  };
+
+  // 3. Delete List (Delete)
+  const handleDeleteList = async (listId) => {
+    const { error } = await supabase
+      .from('todos')
+      .delete()
+      .eq('id', listId);
+    
+    if (!error) fetchData();
+  };
+
+  // 4. Update Cards (Add/Delete/Edit inside list)
+  const updateCardsInDB = async (listId, updatedCards) => {
+    const { error } = await supabase
+      .from('todos')
+      .update({ cards: updatedCards })
+      .eq('id', listId);
+    
+    if (!error) fetchData();
+  };
+
+  const handleAddCard = (listId, currentCards) => {
     if (!newCardText.trim()) return;
-    setData(data.map(list =>
-      list.id === listId ? { ...list, cards: [...list.cards, newCardText] } : list
-    ));
+    const updatedCards = [...currentCards, newCardText];
+    updateCardsInDB(listId, updatedCards);
     setNewCardText("");
     setAddingCardToList(null);
   };
 
-  const handleDeleteCard = (listId, cardIndex) => {
-    setData(data.map(list => {
-      if (list.id === listId) {
-        const newCards = list.cards.filter((_, index) => index !== cardIndex);
-        return { ...list, cards: newCards };
-      }
-      return list;
-    }));
+  const handleDeleteCard = (listId, currentCards, cardIndex) => {
+    const updatedCards = currentCards.filter((_, index) => index !== cardIndex);
+    updateCardsInDB(listId, updatedCards);
   };
 
-  const handleSaveEdit = (listId, cardIndex) => {
+  const handleSaveEdit = (listId, currentCards, cardIndex) => {
     if (!editingCard.text.trim()) return;
-    setData(data.map(list => {
-      if (list.id === listId) {
-        const newCards = [...list.cards];
-        newCards[cardIndex] = editingCard.text;
-        return { ...list, cards: newCards };
-      }
-      return list;
-    }));
+    const updatedCards = [...currentCards];
+    updatedCards[cardIndex] = editingCard.text;
+    updateCardsInDB(listId, updatedCards);
     setEditingCard({ listId: null, index: null, text: "" });
   };
 
-  const handleAddList = () => {
-    if (!newListTitle.trim()) return;
-    setData([...data, { id: Date.now(), title: newListTitle, cards: [] }]);
-    setNewListTitle("");
-    setIsAddingList(false);
-  };
+  if (loading) return <div className="loading">Loading Board...</div>;
 
   return (
     <div className="trello-wrapper">
       <main className="board-container">
         <header className="board-header">
-          <h2>My TODOS</h2>
+          <h2>Haxudio Workspace</h2>
         </header>
 
         <div className="lists-container">
           {data.map((list) => (
             <div key={list.id} className="list-column">
-              {/* Header with Title and Delete Cross */}
               <div className="list-header">
                 <span>{list.title}</span>
-                <button 
-                  className="delete-list-btn" 
-                  onClick={() => handleDeleteList(list.id)}
-                  title="Delete List"
-                >
-                  &times;
-                </button>
+                <button className="delete-list-btn" onClick={() => handleDeleteList(list.id)}>&times;</button>
               </div>
               
               <div className="cards-area">
-                {list.cards.map((card, index) => (
+                {list.cards?.map((card, index) => (
                   <div key={index} className="card">
                     {editingCard.listId === list.id && editingCard.index === index ? (
                       <div className="edit-input-group">
@@ -95,7 +122,7 @@ function App() {
                           onChange={(e) => setEditingCard({...editingCard, text: e.target.value})}
                         />
                         <div className="card-actions">
-                          <button onClick={() => handleSaveEdit(list.id, index)} className="save-btn">Save</button>
+                          <button onClick={() => handleSaveEdit(list.id, list.cards, index)} className="save-btn">Save</button>
                           <button onClick={() => setEditingCard({ listId: null, index: null, text: "" })}>Cancel</button>
                         </div>
                       </div>
@@ -104,7 +131,7 @@ function App() {
                         <span>{card}</span>
                         <div className="card-actions">
                           <button onClick={() => setEditingCard({ listId: list.id, index, text: card })}>Edit</button>
-                          <button onClick={() => handleDeleteCard(list.id, index)}>Delete</button>
+                          <button onClick={() => handleDeleteCard(list.id, list.cards, index)}>Delete</button>
                         </div>
                       </>
                     )}
@@ -121,7 +148,7 @@ function App() {
                       onChange={(e) => setNewCardText(e.target.value)}
                     />
                     <div className="card-actions">
-                      <button onClick={() => handleAddCard(list.id)} className="save-btn">Add</button>
+                      <button onClick={() => handleAddCard(list.id, list.cards)} className="save-btn">Add</button>
                       <button onClick={() => setAddingCardToList(null)}>Cancel</button>
                     </div>
                   </div>

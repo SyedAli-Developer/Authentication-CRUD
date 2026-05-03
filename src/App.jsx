@@ -2,79 +2,74 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import "./index.css";
 
-// --- SUPABASE CONFIG ---
-// Inhe apne Supabase Project Settings -> API se replace karein
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+const supabaseUrl = 'https://mqlrhhsidfxmejqadkuc.supabase.co';
+// YAAD RAKHEIN: Yahan apni "eyJ..." wali lambi key paste karni hay agar error aaye
+const supabaseKey = 'sb_publishable_FM_-tVnDsQ4Holorh6_g_Q_La0Tohql'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Inline States
   const [addingCardToList, setAddingCardToList] = useState(null); 
   const [newCardText, setNewCardText] = useState("");
   const [editingCard, setEditingCard] = useState({ listId: null, index: null, text: "" });
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
 
-  // --- DATABASE OPERATIONS ---
-
-  // 1. Fetch Data (Read)
+  // App load hote hi data mangwao
   useEffect(() => {
-    fetchData();
+    fetchData(true); // Pehli baar loading dikhao
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (isInitialLoad = false) => {
+    if (isInitialLoad) setLoading(true); // Sirf pehli baar loading state on hogi
+    
     const { data: todos, error } = await supabase
-      .from('todos')
+      .from('TODOs')
       .select('*')
       .order('id', { ascending: true });
     
     if (error) console.error("Error fetching:", error);
     else setData(todos || []);
-    setLoading(false);
+    
+    setLoading(false); // Data aane ke baad loading off
   };
 
-  // 2. Add New List (Create)
   const handleAddList = async () => {
     if (!newListTitle.trim()) return;
     const { error } = await supabase
-      .from('todos')
+      .from('TODOs')
       .insert([{ title: newListTitle, cards: [] }]);
     
     if (!error) {
       setNewListTitle("");
       setIsAddingList(false);
-      fetchData(); // Refresh data
+      fetchData(false); // Background mein data refresh karo, loading screen nahi aayegi
     }
   };
 
-  // 3. Delete List (Delete)
   const handleDeleteList = async (listId) => {
     const { error } = await supabase
-      .from('todos')
+      .from('TODOs')
       .delete()
       .eq('id', listId);
     
-    if (!error) fetchData();
+    if (!error) fetchData(false);
   };
 
-  // 4. Update Cards (Add/Delete/Edit inside list)
   const updateCardsInDB = async (listId, updatedCards) => {
     const { error } = await supabase
-      .from('todos')
+      .from('TODOs')
       .update({ cards: updatedCards })
       .eq('id', listId);
     
-    if (!error) fetchData();
+    if (!error) fetchData(false);
   };
 
   const handleAddCard = (listId, currentCards) => {
     if (!newCardText.trim()) return;
-    const updatedCards = [...currentCards, newCardText];
+    const updatedCards = [...(currentCards || []), newCardText];
     updateCardsInDB(listId, updatedCards);
     setNewCardText("");
     setAddingCardToList(null);
@@ -93,7 +88,8 @@ function App() {
     setEditingCard({ listId: null, index: null, text: "" });
   };
 
-  if (loading) return <div className="loading">Loading Board...</div>;
+  // Loading screen sirf tab dikhegi jab app pehli baar khulegi
+  if (loading) return <div className="loading">Loading Haxudio Workspace...</div>;
 
   return (
     <div className="trello-wrapper">

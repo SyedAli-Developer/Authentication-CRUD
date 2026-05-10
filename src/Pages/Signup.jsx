@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { supabase } from '../Supabase/supabaseClient';
+import { supabase } from '../config/supabase/supabase.js';
 import './Login.css';
+import { useNavigate } from 'react-router-dom'; // Import karein
 
 function SignUp() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    
+    const navigate = useNavigate(); // Initialize karein
 
     async function handleSignUp(e) {
         e.preventDefault();
@@ -17,6 +20,8 @@ function SignUp() {
             alert("Error: " + error.message);
         } else {
             alert("Success! Please check your email for the confirmation link.");
+            // Signup ke baad login page par bhejne ke liye:
+            navigate('/login'); 
         }
     }
 
@@ -28,14 +33,14 @@ function SignUp() {
                     type="email" 
                     placeholder="Enter Email" 
                     value={email}
-                    onChange={function(e) { setEmail(e.target.value) }}
+                    onChange={(e) => setEmail(e.target.value)}
                     required 
                 />
                 <input 
                     type="password" 
                     placeholder="Choose Password" 
                     value={password}
-                    onChange={function(e) { setPassword(e.target.value) }}
+                    onChange={(e) => setPassword(e.target.value)}
                     required 
                 />
                 <button type="submit" className="auth-button">Register</button>

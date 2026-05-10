@@ -12,10 +12,11 @@ createRoot(document.getElementById('root')).render(
   <BrowserRouter>
   <Navbar />
   <Routes>
-   {/* <Route path='/' element={<Home />} /> */}
-   <Route path='/' element={<App />} />
+   <Route path='/' element={<Home />} />
    <Route path='/login' element={<Login />} />
    <Route path='/signup' element={<SignUp />} />
+   <Route path='/dashboard' element={<App />} />
+   
     
   </Routes>
   </BrowserRouter>

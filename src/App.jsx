@@ -4,7 +4,7 @@ import "./index.css";
 
 const supabaseUrl = 'https://mqlrhhsidfxmejqadkuc.supabase.co';
 // YAAD RAKHEIN: Yahan apni "eyJ..." wali lambi key paste karni hay agar error aaye
-const supabaseKey = 'sb_publishable_FM_-tVnDsQ4Holorh6_g_Q_La0Tohql'; 
+const supabaseKey = 'sb_publishable_91tS8MbfX2r0FZfovXgHNA_4yNDAI53'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function App() {

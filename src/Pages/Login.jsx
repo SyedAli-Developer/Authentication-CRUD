@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { supabase } from '../Supabase/supabaseClient';
+import { supabase } from '../config/supabase/supabase';
 import './Login.css';
+import { useNavigate } from 'react-router-dom'; // Import pehle se hai
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    
+    // 1. useNavigate ko initialize karein
+    const navigate = useNavigate();
 
     async function handleLogin(e) {
         e.preventDefault();
@@ -16,7 +20,9 @@ function Login() {
         if (error) {
             alert("Login Failed: " + error.message);
         } else {
-            alert("Login Successful! Welcome " + data.user.email);
+            // 2. Success hone par navigate karein
+            // hum { replace: true } use kar rahe hain taake user back karke wapas login par na aaye
+            navigate('/dashboard', { replace: true });
         }
     }
 
@@ -28,14 +34,14 @@ function Login() {
                     type="email" 
                     placeholder="Email Address" 
                     value={email}
-                    onChange={function(e) { setEmail(e.target.value) }}
+                    onChange={(e) => setEmail(e.target.value)}
                     required 
                 />
                 <input 
                     type="password" 
                     placeholder="Password" 
                     value={password}
-                    onChange={function(e) { setPassword(e.target.value) }}
+                    onChange={(e) => setPassword(e.target.value)}
                     required 
                 />
                 <button type="submit" className="auth-button">Sign In</button>

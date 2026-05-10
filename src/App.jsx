@@ -10,7 +10,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  
   const [addingCardToList, setAddingCardToList] = useState(null); 
   const [newCardText, setNewCardText] = useState("");
   const [editingCard, setEditingCard] = useState({ listId: null, index: null, text: "" });
